@@ -3,16 +3,20 @@
 Name:           osTicket
 Version:        1.10
 Release:        1%{?dist}
-Summary:        Web-based MP3/Ogg/RM/Flac/WMA/M4A manager
+Summary:        Web-based customer support ticket system
 License:        AGPLv3+
 Group:          Networking/WWW
 URL:            http://osticket.com
 Source0:        http://osticket.com/sites/default/files/download/%{name}-v%{version}.zip
+Requires        httpd
+Requires:       php
 Requires:	php-imap
 Requires:       php-fpm
 Requires:       php-mbstring
 Requires:       php-mysql
 Requires:       php-gd
+Requires:       php-pecl-zendopcache 
+Requires:       php-pecl-apcu
 BuildArch:      noarch
 
 %description
@@ -40,15 +44,26 @@ cat > $RPM_BUILD_ROOT%{_sysconfdir}/httpd/conf.d/%{name}.conf<<EOF
 # Ampache configuration
 
 Alias /%{name} %{_datadir}/%{name}
-<Directory %{_datadir}/%{name}>
-    Require all granted
-    php_admin_value post_max_size 110M
-    php_admin_value upload_max_filesize 100M
+Alias /osticket %{_datadir}/%{name}
+
+<Directory %{_datadir}/%{name}/upload>
+   <IfModule mod_authz_core.c>
+     # Apache 2.4
+     <RequireAny>
+       Require all granted
+     </RequireAny>
+   </IfModule>
+   <IfModule !mod_authz_core.c>
+     # Apache 2.2
+     Order Deny,Allow
+     Deny from All
+     Allow from all
+   </IfModule>
 </Directory>
 EOF
 
 %files
-%doc %{name}-%{version}/docs/*
+#%doc %{name}-%{version}/docs/*
 %{_datadir}/%{name}
 %config(noreplace) %{_sysconfdir}/httpd/conf.d/%{name}.conf
 #%dir %attr(0750,apache,apache) %{_datadir}/%{name}/config
